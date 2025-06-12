@@ -1,82 +1,68 @@
-const con = require('../db');
-const { v4: uuidv4 } = require('uuid'); // ✅ Import uuid
+import con from '../db.js';
+import { v4 as uuidv4 } from 'uuid';
 
-exports.getUser = (req, res) => {
-  const searchQuery = 'SELECT * FROM trialtable';
-
-  con.query(searchQuery, (err, result) => {
-    if (err) {
-      return res.status(400).json({ msg: "Couldn't fetch data" });
-    }
-
+export const getUser = async (req, res) => {
+  try {
+    const result = await con.query('SELECT * FROM trialtable');
     if (result.rows.length === 0) {
-      return res.status(200).json({ msg: "No users at the moment" });
+      return res.status(200).json({ msg: 'No users at the moment' });
     }
-
     res.status(200).json(result.rows);
-  });
-};
-
-exports.postUser = (req, res) => {
-  const { name, age, occupation } = req.body;
-  const id = uuidv4(); // ✅ Use correct uuid
-
-  if (!name || !age || !occupation) {
-    return res.status(400).json({ msg: 'All fields are required.' });
+  } catch (err) {
+    res.status(500).json({ msg: 'Error fetching users' });
   }
-
-  const insertQuery = 'INSERT INTO trialtable (name, age, occupation, id) VALUES ($1, $2, $3, $4)';
-
-  con.query(insertQuery, [name, age, occupation, id], (err, result) => {
-    if (err) {
-      return res.status(400).json({ msg: 'Insert error' });
-    }
-
-    res.status(201).send('User added successfully.');
-  });
 };
 
-exports.getUserId = (req, res) => {
+export const getUserId = async (req, res) => {
   const { id } = req.params;
-  const IdQuery = 'SELECT * FROM trialtable WHERE id = $1';
-
-  con.query(IdQuery, [id], (err, result) => {
-    if (err) {
-      return res.status(500).json({ msg: 'Error fetching user' });
-    }
-
+  try {
+    const result = await con.query('SELECT * FROM trialtable WHERE id = $1', [id]);
     if (result.rows.length === 0) {
       return res.status(404).json({ msg: 'User not found' });
     }
-
     res.status(200).json(result.rows[0]);
-  });
+  } catch (err) {
+    res.status(500).json({ msg: 'Error fetching user by ID' });
+  }
 };
 
-exports.updateUser = (req, res) => {
+export const postUser = async (req, res) => {
+  const { name, age, occupation } = req.body;
+  const id = uuidv4();
+
+  try {
+    const result = await con.query(
+      'INSERT INTO trialtable (name, age, occupation, id) VALUES ($1, $2, $3, $4)',
+      [name, age, occupation, id]
+    );
+    res.status(201).json({ msg: 'User added', id });
+  } catch (err) {
+    res.status(500).json({ msg: 'Error adding user' });
+  }
+};
+
+export const updateUser = async (req, res) => {
   const { id } = req.params;
   const { name, age, occupation } = req.body;
 
-  const updateQuery = 'UPDATE trialtable SET name = $1, age = $2, occupation = $3 WHERE id = $4';
-
-  con.query(updateQuery, [name, age, occupation, id], (err, result) => {
-    if (err) {
-      return res.status(400).json({ msg: 'Update failed' });
-    }
-
-    res.status(200).send('User updated successfully');
-  });
+  try {
+    await con.query(
+      'UPDATE trialtable SET name = $1, age = $2, occupation = $3 WHERE id = $4',
+      [name, age, occupation, id]
+    );
+    res.status(200).json({ msg: 'User updated' });
+  } catch (err) {
+    res.status(500).json({ msg: 'Error updating user' });
+  }
 };
 
-exports.deleteUser = (req, res) => {
+export const deleteUser = async (req, res) => {
   const { id } = req.params;
-  const deleteQuery = 'DELETE FROM trialtable WHERE id = $1';
 
-  con.query(deleteQuery, [id], (err, result) => {
-    if (err) {
-      return res.status(400).json({ msg: 'Delete failed' });
-    }
-
-    res.status(200).send('User deleted successfully');
-  });
+  try {
+    await con.query('DELETE FROM trialtable WHERE id = $1', [id]);
+    res.status(200).json({ msg: 'User deleted' });
+  } catch (err) {
+    res.status(500).json({ msg: 'Error deleting user' });
+  }
 };
