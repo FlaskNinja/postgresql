@@ -1,13 +1,15 @@
-const { Client } = require('pg');
+import pkg from 'pg';
+import dotenv from 'dotenv';
 
-const con = new Client({
-  host: 'localhost',
-  user: 'postgres',
-  port: 5432,
-  password: 'tboy',
-  database: 'trialdb'
+dotenv.config();
+const { Pool } = pkg;
+
+const con = new Pool({
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT
 });
 
-con.connect().then(console.log('conncted to the database')); // ✅ You must connect to PostgreSQL
-
-module.exports = con;
+export default con;
